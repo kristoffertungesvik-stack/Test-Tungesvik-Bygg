@@ -3,51 +3,77 @@
     "id": "cust-1788784957920-t78en",
     "projectName": "Test 1",
     "order": {
-      "seed-visma::::21102223": {
+      "seed-visma::::11365830": {
         "sourceName": "Visma prisliste",
         "item": {
-          "artikkelnr": "21102223",
+          "artikkelnr": "11365830",
           "nobb": "",
-          "beskrivelse": "INSPEKSJONSLUKE STD HVIT 200-200",
-          "pris": 151.4,
+          "beskrivelse": "SUPERFLENS DIN M14 47MM",
+          "pris": 148.78,
           "enhet": "STK",
-          "kommentar": "Simpson Strong-Tie Norge AS"
+          "kommentar": "Makita Norway NUF"
+        },
+        "qty": 3,
+        "markup": 40
+      },
+      "seed-visma::::24176513": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "24176513",
+          "nobb": "",
+          "beskrivelse": "UNDERTAK TYVEK PRO SUPER 1,5X50M",
+          "pris": 57.27,
+          "enhet": "M2",
+          "kommentar": "Isola AS"
+        },
+        "qty": 1,
+        "markup": 40
+      },
+      "seed-visma::::45098506": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "45098506",
+          "nobb": "",
+          "beskrivelse": "SUPERMATT ROM 01 BASE HVIT 2.7L",
+          "pris": 289.3,
+          "enhet": "STK",
+          "kommentar": "Mestergruppen Logistikk"
         },
         "qty": 2,
-        "markup": 0
+        "markup": 40
       },
-      "seed-visma::::21486022": {
+      "seed-visma::::45098525": {
         "sourceName": "Visma prisliste",
         "item": {
-          "artikkelnr": "21486022",
+          "artikkelnr": "45098525",
           "nobb": "",
-          "beskrivelse": "FORBORDBSL STEIN 200MM 2M SORT",
-          "pris": 126.14,
+          "beskrivelse": "SUPERMATT ROM 01 BASE B 2.7L",
+          "pris": 289.3,
           "enhet": "STK",
-          "kommentar": "Jemtland AS"
+          "kommentar": "Mestergruppen Logistikk"
         },
-        "qty": 6,
-        "markup": 0
+        "qty": 34,
+        "markup": 40
       },
-      "seed-visma::::23050222": {
+      "seed-visma::::46165026": {
         "sourceName": "Visma prisliste",
         "item": {
-          "artikkelnr": "23050222",
+          "artikkelnr": "46165026",
           "nobb": "",
-          "beskrivelse": "EIK  09X025 FEIELIST LAK",
-          "pris": 16.48,
-          "enhet": "LM",
-          "kommentar": "S Wood AS"
+          "beskrivelse": "GJØCO SUPERMAX BASE HVIT 9L",
+          "pris": 1072.51,
+          "enhet": "STK",
+          "kommentar": "Mestergruppen Logistikk"
         },
         "qty": 4,
-        "markup": 0
+        "markup": 40
       }
     },
     "pricing": {
-      "markup": 0,
+      "markup": 40,
       "vat": 25
     },
-    "savedAt": "2026-09-07T12:44:07.275Z",
-    "deleted": true
+    "savedAt": "2026-09-07T12:56:06.968Z",
+    "deleted": false
   }
 ]
