@@ -1098,10 +1098,13 @@ function askConfirm(message){
   });
 }
 
-// --- GitHub-synk: lagre prosjekter (kunder/bestillinger) i en JSON-fil i et GitHub-repo ---
-// Slik kan prosjektene hentes fram igjen fra andre enheter, ikke bare denne nettleseren.
-const GH_CONFIG_KEY = 'gh-sync-config-v1';
-let ghConfig = null; // { owner, repo, branch, path, token }
+// --- Prosjekt-synk: lagre prosjekter (kunder/bestillinger) i en JSON-fil i et GitHub-repo,
+// via en liten "synk-tjener" (Cloudflare Worker) som holder på det ekte GitHub-tokenet.
+// Appen selv kjenner bare synk-tjenerens adresse og en delt PIN-kode – aldri GitHub-tokenet.
+// Slik kan prosjektene hentes fram igjen fra andre enheter, ikke bare denne nettleseren,
+// uten at alle som besøker den offentlige nettsiden trenger tilgang til GitHub-repoet.
+const GH_CONFIG_KEY = 'sync-config-v2';
+let ghConfig = null; // { workerUrl, pin }
 let ghSyncing = false;
 
 function loadGhConfig(){
@@ -1124,70 +1127,33 @@ function clearGhConfig(){
 }
 
 function ghIsConfigured(){
-  return !!(ghConfig && ghConfig.owner && ghConfig.repo && ghConfig.token);
-}
-
-function ghApiUrl(){
-  const path = (ghConfig.path || 'data/projects.json').replace(/^\/+/, '');
-  return `https://api.github.com/repos/${encodeURIComponent(ghConfig.owner)}/${encodeURIComponent(ghConfig.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-}
-
-function ghBranch(){
-  return ghConfig.branch || 'main';
-}
-
-// Base64 <-> JSON, med støtte for norske tegn (æøå m.m.)
-function b64EncodeUtf8(str){
-  return btoa(unescape(encodeURIComponent(str)));
-}
-function b64DecodeUtf8(str){
-  return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
+  return !!(ghConfig && ghConfig.workerUrl && ghConfig.pin);
 }
 
 async function ghFetchFile(){
-  const url = ghApiUrl() + `?ref=${encodeURIComponent(ghBranch())}`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${ghConfig.token}`,
-      'Accept': 'application/vnd.github+json'
-    }
-  });
-  if(res.status === 404){
-    return { sha: null, data: [] };
-  }
-  if(!res.ok){
-    const body = await res.text().catch(()=> '');
-    const err = new Error(`Klarte ikke å lese fra GitHub (${res.status}).`);
-    err.status = res.status;
-    err.detail = body;
-    throw err;
-  }
-  const json = await res.json();
-  let data = [];
-  try{ data = JSON.parse(b64DecodeUtf8(json.content)); }catch(e){ data = []; }
-  if(!Array.isArray(data)) data = [];
-  return { sha: json.sha, data };
-}
-
-async function ghPutFile(data, sha, message){
-  const body = {
-    message: message || `Oppdater prosjekter (${new Date().toLocaleString('nb-NO')})`,
-    content: b64EncodeUtf8(JSON.stringify(data, null, 2)),
-    branch: ghBranch(),
-  };
-  if(sha) body.sha = sha;
-  const res = await fetch(ghApiUrl(), {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${ghConfig.token}`,
-      'Accept': 'application/vnd.github+json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
+  const res = await fetch(ghConfig.workerUrl, {
+    method: 'GET',
+    headers: { 'X-Pin': ghConfig.pin }
   });
   if(!res.ok){
     const errJson = await res.json().catch(()=> ({}));
-    const err = new Error(errJson.message || `Klarte ikke å skrive til GitHub (${res.status}).`);
+    const err = new Error(res.status === 401 ? 'Feil PIN-kode.' : (errJson.error || `Klarte ikke å lese fra synk-tjeneren (${res.status}).`));
+    err.status = res.status;
+    throw err;
+  }
+  const json = await res.json();
+  return { sha: json.sha || null, data: Array.isArray(json.data) ? json.data : [] };
+}
+
+async function ghPutFile(data, sha){
+  const res = await fetch(ghConfig.workerUrl, {
+    method: 'PUT',
+    headers: { 'X-Pin': ghConfig.pin, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data, sha })
+  });
+  if(!res.ok){
+    const errJson = await res.json().catch(()=> ({}));
+    const err = new Error(res.status === 401 ? 'Feil PIN-kode.' : (errJson.error || `Klarte ikke å skrive til synk-tjeneren (${res.status}).`));
     err.status = res.status;
     throw err;
   }
@@ -1248,7 +1214,7 @@ async function ghSyncSavedOrders(showToasts, isRetry){
     if(showToasts) showToast('Synkronisert med GitHub.');
   }catch(e){
     setGhStatus('Synk feilet – trykk for å prøve igjen', 'err');
-    if(showToasts) showToast('Synkronisering mot GitHub feilet: ' + e.message, true);
+    if(showToasts) showToast('Synkronisering feilet: ' + e.message, true);
   }finally{
     ghSyncing = false;
   }
@@ -1257,31 +1223,20 @@ async function ghSyncSavedOrders(showToasts, isRetry){
 function openGithubSettings(){
   const overlay = document.createElement('div');
   overlay.className = 'confirm-overlay';
-  const cfg = ghConfig || { owner:'', repo:'', branch:'main', path:'data/projects.json', token:'' };
+  const cfg = ghConfig || { workerUrl:'', pin:'' };
   overlay.innerHTML = `
     <div class="gh-settings-box">
-      <h3>GitHub-synk av prosjekter</h3>
-      <div class="gh-settings-intro">Lagrer kunde-/prosjektlisten i en fil i GitHub-repoet ditt, slik at du finner prosjektene igjen fra andre enheter også. Bestillingen du jobber med akkurat nå, og prislistene, ligger fortsatt kun lokalt i denne nettleseren.</div>
+      <h3>Synk av prosjekter</h3>
+      <div class="gh-settings-intro">Lagrer kunde-/prosjektlisten via synk-tjeneren for Tungesuik Bygg, slik at du finner prosjektene igjen fra andre enheter også. Bestillingen du jobber med akkurat nå, og prislistene, ligger fortsatt kun lokalt i denne nettleseren.</div>
       <div class="gh-field">
-        <label for="ghOwner">GitHub-brukernavn / organisasjon</label>
-        <input type="text" id="ghOwner" placeholder="f.eks. kristoffer-tungesuik" value="${escapeHtml(cfg.owner)}">
+        <label for="ghWorkerUrl">Synk-adresse</label>
+        <input type="text" id="ghWorkerUrl" placeholder="https://tungesuik-nobb-sync.xxxxx.workers.dev" value="${escapeHtml(cfg.workerUrl)}">
+        <div class="gh-field-hint">Adressen til synk-tjeneren – samme for alle som bruker appen. Spør den som satte opp appen om du ikke har den.</div>
       </div>
       <div class="gh-field">
-        <label for="ghRepo">Repository-navn</label>
-        <input type="text" id="ghRepo" placeholder="f.eks. tungesuik-nobb" value="${escapeHtml(cfg.repo)}">
-      </div>
-      <div class="gh-field">
-        <label for="ghBranch">Branch</label>
-        <input type="text" id="ghBranch" placeholder="main" value="${escapeHtml(cfg.branch || 'main')}">
-      </div>
-      <div class="gh-field">
-        <label for="ghPath">Filsti for prosjektdata</label>
-        <input type="text" id="ghPath" placeholder="data/projects.json" value="${escapeHtml(cfg.path || 'data/projects.json')}">
-      </div>
-      <div class="gh-field">
-        <label for="ghToken">Personal access token</label>
-        <input type="password" id="ghToken" placeholder="github_pat_…" value="${escapeHtml(cfg.token)}" autocomplete="off">
-        <div class="gh-field-hint">Lag et «fine-grained» token på github.com → Settings → Developer settings → Personal access tokens, avgrenset til kun dette repoet, med rettigheten «Contents: Read and write». Tokenet lagres kun i denne nettleseren og sendes direkte til GitHub – ikke til noen andre. Del det aldri med noen.</div>
+        <label for="ghPin">PIN-kode</label>
+        <input type="password" id="ghPin" placeholder="Delt kode for Tungesuik Bygg" value="${escapeHtml(cfg.pin)}" autocomplete="off">
+        <div class="gh-field-hint">Samme kode som de andre i firmaet bruker. Ikke del den utenfor firmaet.</div>
       </div>
       <div class="gh-settings-actions">
         <button class="confirm-btn" id="ghDisconnectBtn" type="button">Koble fra</button>
@@ -1299,20 +1254,17 @@ function openGithubSettings(){
   overlay.querySelector('#ghDisconnectBtn').addEventListener('click', ()=>{
     clearGhConfig();
     setGhStatus('Kun lagret lokalt · sett opp synk', 'muted');
-    showToast('Koblet fra GitHub-synk.');
+    showToast('Koblet fra synk.');
     cleanup();
   });
   overlay.querySelector('#ghSaveBtn').addEventListener('click', async ()=>{
-    const owner = overlay.querySelector('#ghOwner').value.trim();
-    const repo = overlay.querySelector('#ghRepo').value.trim();
-    const branch = overlay.querySelector('#ghBranch').value.trim() || 'main';
-    const path = overlay.querySelector('#ghPath').value.trim() || 'data/projects.json';
-    const token = overlay.querySelector('#ghToken').value.trim();
-    if(!owner || !repo || !token){
-      showToast('Fyll ut brukernavn, repo-navn og token.', true);
+    const workerUrl = overlay.querySelector('#ghWorkerUrl').value.trim().replace(/\/+$/, '');
+    const pin = overlay.querySelector('#ghPin').value;
+    if(!workerUrl || !pin){
+      showToast('Fyll ut synk-adresse og PIN-kode.', true);
       return;
     }
-    saveGhConfig({ owner, repo, branch, path, token });
+    saveGhConfig({ workerUrl, pin });
     cleanup();
     await ghSyncSavedOrders(true);
   });
