@@ -75,5 +75,56 @@
     },
     "savedAt": "2026-09-07T12:56:06.968Z",
     "deleted": false
+  },
+  {
+    "id": "cust-1788785805347-do7eu",
+    "projectName": "Test 2",
+    "order": {
+      "seed-visma::::23587181": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "23587181",
+          "nobb": "",
+          "beskrivelse": "FURU 28X145 CUIMP TERRASSE KL1",
+          "pris": 113.92,
+          "enhet": "M2",
+          "kommentar": "Bergene Holm AS"
+        },
+        "qty": 10,
+        "markup": 40
+      },
+      "seed-visma::::27404938": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "27404938",
+          "nobb": "",
+          "beskrivelse": "FURU 28X120X3300 TERRASSE CUIMP KL1",
+          "pris": 69.89,
+          "enhet": "STK",
+          "kommentar": "Larvik Impregn.kompani AS"
+        },
+        "qty": 2,
+        "markup": 40
+      },
+      "seed-visma::::40953085": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "40953085",
+          "nobb": "",
+          "beskrivelse": "GRUNNMURSPL TERRA GRÅ 1195 X 2395",
+          "pris": 1112,
+          "enhet": "STK",
+          "kommentar": "Steni AS"
+        },
+        "qty": 2,
+        "markup": 40
+      }
+    },
+    "pricing": {
+      "markup": 40,
+      "vat": 25
+    },
+    "savedAt": "2026-09-07T12:56:45.347Z",
+    "deleted": false
   }
 ]
