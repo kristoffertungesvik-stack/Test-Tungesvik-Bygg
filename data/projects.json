@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": "cust-1788784957920-t78en",
+    "projectName": "Test 1",
+    "order": {
+      "seed-visma::::21102223": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "21102223",
+          "nobb": "",
+          "beskrivelse": "INSPEKSJONSLUKE STD HVIT 200-200",
+          "pris": 151.4,
+          "enhet": "STK",
+          "kommentar": "Simpson Strong-Tie Norge AS"
+        },
+        "qty": 2,
+        "markup": 0
+      },
+      "seed-visma::::21486022": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "21486022",
+          "nobb": "",
+          "beskrivelse": "FORBORDBSL STEIN 200MM 2M SORT",
+          "pris": 126.14,
+          "enhet": "STK",
+          "kommentar": "Jemtland AS"
+        },
+        "qty": 6,
+        "markup": 0
+      },
+      "seed-visma::::23050222": {
+        "sourceName": "Visma prisliste",
+        "item": {
+          "artikkelnr": "23050222",
+          "nobb": "",
+          "beskrivelse": "EIK  09X025 FEIELIST LAK",
+          "pris": 16.48,
+          "enhet": "LM",
+          "kommentar": "S Wood AS"
+        },
+        "qty": 4,
+        "markup": 0
+      }
+    },
+    "pricing": {
+      "markup": 0,
+      "vat": 25
+    },
+    "savedAt": "2026-09-07T12:42:37.920Z",
+    "deleted": false
+  }
+]
